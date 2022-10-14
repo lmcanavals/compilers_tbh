@@ -24,11 +24,11 @@ cos           { return KWCOS; }
 tan           { return KWTAN; }
 sqrt          { return KWSQRT; }
 log           { return KWLOG; }
-{ID}          { return ID; }
-{LITNUM}      { yylval.a = atof(yytext); return LITNUM; }
+{ID}          { strcpy(yylval.name, yytext); return ID; }
+{LITNUM}      { yylval.num = atof(yytext); return LITNUM; }
 [\n]          { return NL; }
 [ \t]         ;
-.             { printf("{%s}\n", yytext); return -1; /* unknown token */ }
+.             ; /* unknown token */
 
 %%
 

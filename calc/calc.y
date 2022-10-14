@@ -17,9 +17,13 @@ int yyerror(char* s) {
 
 %start input
 
-%union { double a; }
+%union {
+	char name[100];
+	double num;
+}
 
-%type<a> exp LITNUM
+%type<num> exp LITNUM
+%type<name> ID
 
 %token EXIT OPSUM OPREST OPPROD OPDIV OPDIVI OPMOD OPPOW
 %token ID
