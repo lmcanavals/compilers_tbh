@@ -13,17 +13,21 @@ int yyerror(char* s) {
 	printf("%s\n", s);
 }
 
+double (*func[5])(double) = {&sin, &cos, &tan, &sqrt, &log};
+
 %}
 
-%start input
+%start start
 
 %union {
 	char name[100];
 	double num;
+	int func;
 }
 
-%type<num> exp LITNUM
+%type<num> exp expp term termp factor factorp power call LITNUM
 %type<name> ID
+%type<func> func KWSIN KWCOS KWTAN KWSQRT KWLOG
 
 %token EXIT OPSUM OPREST OPPROD OPDIV OPDIVI OPMOD OPPOW
 %token ID
@@ -35,23 +39,71 @@ int yyerror(char* s) {
 
 %%
 
-input
-	: /* empty */
-	| input line
+start
+	: /* empty string */
+	| start line
 	;
 
 line
 	: NL
-	| exp NL           { printf("= %f\n", $1); }
+	| assign NL
+	| exp NL             { printf("= %f\n", $1); }
+	| ID NL
+	;
+
+assign
+	: ID OPASIGN exp
 	;
 
 exp
-	: LITNUM             { $$ = $1; }
-	| exp exp OPSUM      { $$ = $1 + $2; }
-	| exp exp OPREST     { $$ = $1 - $2; }
-	| exp exp OPPROD     { $$ = $1 * $2; }
-	| exp exp OPDIV      { $$ = $1 / $2; }
-	| exp exp OPPOW      { $$ = pow($1, $2); }
+	: term expp
+	;
+
+expp
+	: OPSUM term expp
+	| OPREST term expp
+	| /* empty string */
+	;
+
+term
+	: factor termp
+	;
+
+termp
+	: OPPROD factor termp
+	| OPDIV factor termp
+	| OPDIVI factor termp
+	| OPMOD factor termp
+	| /* empty string */
+	;
+
+factor
+	: power factorp
+	;
+
+factorp
+	: OPPOW power factorp
+	| /* empty string */
+	;
+
+power
+	: ID
+	| LITNUM
+	| OPREST LITNUM
+	| call
+	| LPAR exp RPAR
+	;
+
+call
+	: func LPAR exp RPAR       { $$ = func[$1]($3); }
+	;
+
+func
+	: KWSIN
+	| KWCOS
+	| KWTAN
+	| KWLOG
+	| KWSQRT
 	;
 
 %%
