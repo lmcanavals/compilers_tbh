@@ -9,10 +9,10 @@ CCFLAGS += -lfl
 YACCFLAGS += -d
 
 all: calc.tab.c lex.yy.c
-	$(CC) -o calc calc.tab.c lex.yy.c $(CCFLAGS)
+	$(CC) calc.tab.c lex.yy.c $(CCFLAGS)
 
 run:
-	./calc
+	./a.out
 
 calc.tab.c:
 	$(YACC) $(YACCFLAGS) calc.y
@@ -21,7 +21,7 @@ lex.yy.c:
 	$(LEX) calc.l
 
 clean:
-	RM calc
+	RM a.out
 	RM calc.tab.c
 	RM calc.tab.h
 	RM lex.yy.c

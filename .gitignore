@@ -50,3 +50,9 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# flex and bison stuff
+*.yy.c
+*.tab.c
+*.tab.h
+
