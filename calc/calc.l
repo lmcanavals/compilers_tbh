@@ -25,9 +25,10 @@ tan           { return KWTAN; }
 sqrt          { return KWSQRT; }
 log           { return KWLOG; }
 {ID}          { return ID; }
-{LITNUM}      { yylval = atof(yytext); return LITNUM; }
-[ \n\r\t]     { /* ignoring this */ }
-.             { return -1; /* unknown token */ }
+{LITNUM}      { yylval.a = atof(yytext); return LITNUM; }
+[\n]          { return NL; }
+[ \t]         ;
+.             { printf("{%s}\n", yytext); return -1; /* unknown token */ }
 
 %%
 

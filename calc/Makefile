@@ -5,7 +5,7 @@ MD := mkdir -p
 YACC := bison
 LEX := flex
 
-CCFLAGS += -lfl
+CCFLAGS += -lfl -lm
 YACCFLAGS += -d
 
 all: calc.tab.c lex.yy.c
@@ -21,8 +21,8 @@ lex.yy.c:
 	$(LEX) calc.l
 
 clean:
-	RM a.out
-	RM calc.tab.c
-	RM calc.tab.h
-	RM lex.yy.c
+	$(RM) a.out
+	$(RM) calc.tab.c
+	$(RM) calc.tab.h
+	$(RM) lex.yy.c
 
