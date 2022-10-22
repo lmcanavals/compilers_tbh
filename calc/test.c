@@ -1,10 +1,12 @@
 #include <stdio.h>
-#include <stdlib.h>
+#include <math.h>
 
 int main() {
-	char hola[3] = "34s";
-	double x = atof(hola);
-	printf("-- %s -- %g --\n", hola, x);
+
+	double a = 2;
+	double b = 3;
+
+	printf("%f\n", pow(a, b));
 
 	return 0;
 }

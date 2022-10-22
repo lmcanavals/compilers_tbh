@@ -19,11 +19,11 @@ ID [A-Za-z_][A-Za-z_0-9]*
 "="           { return OPASIGN; }
 "("           { return LPAR; }
 ")"           { return RPAR; }
-sin           { yylval.func = 0; return KWSIN; }
-cos           { yylval.func = 1; return KWCOS; }
-tan           { yylval.func = 2; return KWTAN; }
-sqrt          { yylval.func = 3; return KWSQRT; }
-log           { yylval.func = 4; return KWLOG; }
+sin           { return KWSIN; }
+cos           { return KWCOS; }
+tan           { return KWTAN; }
+sqrt          { return KWSQRT; }
+log           { return KWLOG; }
 {ID}          { strcpy(yylval.name, yytext); return ID; }
 {LITNUM}      { yylval.num = atof(yytext); return LITNUM; }
 [\n]          { return NL; }
