@@ -12,6 +12,7 @@ struct symrec {
 		double var;
 		func_t *fun;
 	} value;
+	int init;
 	struct symrec* next;
 };
 

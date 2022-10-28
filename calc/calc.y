@@ -3,6 +3,7 @@
 %{
 
 /* código C, importar scanner */
+#include <stdlib.h>
 #include <ctype.h>
 #include <stdio.h>
 #include <math.h>
@@ -50,8 +51,15 @@ line
 
 exp
 	: NUM
-	| VAR                      { $$ = $1->value.var; }
-	| VAR '=' exp              { $$ = $3; $1->value.var = $3; }
+	| VAR                      {
+		if ($1->init)
+			$$ = $1->value.var;
+		else {
+			yyerror("undef var");
+			exit(1);
+		}
+	}
+	| VAR '=' exp              { $$ = $3; $1->value.var = $3; $1->init = 1; }
 	| FUN '(' exp ')'          { $$ = $1->value.fun($3); }
 	| exp '+' exp              { $$ = $1 + $3; }
 	| exp '-' exp              { $$ = $1 - $3; }
@@ -85,6 +93,7 @@ static void init_table(void) {
 	for (int i = 0; funs[i].name; ++i) {
 		symrec* ptr = putsym(funs[i].name, FUN);
 		ptr->value.fun = funs[i].fun;
+		ptr->init = 1;
 	}
 }
 
@@ -97,6 +106,7 @@ symrec* putsym(char const* name, int sym_type) {
 	res->name = strdup(name);
 	res->type = sym_type;
 	res->value.var = 0;
+	res->init = 0;
 	res->next = sym_table;
 	sym_table = res;
 	return res;
