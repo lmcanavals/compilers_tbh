@@ -1,32 +1,23 @@
 %{
 
+#include "calc.h"
 #include "calc.tab.h"
 
 %}
 
-LITNUM ([0-9]+\.[0-9]+|([0-9]+\.)|(\.[0-9]+)|([0-9]+))([Ee][+\-]?[0-9]+)?
-ID [A-Za-z_][A-Za-z_0-9]*
+NUM ([0-9]+\.[0-9]+|([0-9]+\.)|(\.[0-9]+)|([0-9]+))([Ee][+\-]?[0-9]+)?
+VAR [A-Za-z_][A-Za-z_0-9]*
+OP [+\-*/=\^()\n]
 
 %%
 
-"+"           { return OPSUM; }
-"-"           { return OPREST; }
-"*"           { return OPPROD; }
-"/"           { return OPDIV; }
-"\\"          { return OPDIVI; }
-"%"           { return OPMOD; }
-"^"           { return OPPOW; }
-"="           { return OPASIGN; }
-"("           { return LPAR; }
-")"           { return RPAR; }
-sin           { return KWSIN; }
-cos           { return KWCOS; }
-tan           { return KWTAN; }
-sqrt          { return KWSQRT; }
-log           { return KWLOG; }
-{ID}          { strcpy(yylval.name, yytext); return ID; }
-{LITNUM}      { yylval.num = atof(yytext); return LITNUM; }
-[\n]          { return NL; }
+{OP}          { return yytext[0]; }
+{VAR}         {
+	symrec* s = getsym(yytext);
+	if (!s) s = putsym(yytext, VAR);
+	yylval.VAR = s;
+	return VAR; }
+{NUM}         { yylval.NUM = atof(yytext); return NUM; }
 [ \t]         ;
 .             ; /* unknown token */
 

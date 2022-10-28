@@ -7,124 +7,114 @@
 #include <stdio.h>
 #include <math.h>
 
-int yylex();
+#include "calc.h"
 
-int yyerror(char* s) {
-	printf("%s\n", s);
-}
-
-double (*func[])(double) = {&sin, &cos, &tan, &sqrt, &log};
-double op(double a, double b, int fi) {
-	switch (fi) {
-	case 0: return a + b;
-	case 1: return a - b;
-	case 2: return a * b;
-	case 3: return a / b;
-	case 4: return (int)a / (int)b;
-	case 5: return (int)a % (int)b;
-	case 6: return pow(a, b);
-	}
+int yylex(void);
+void yyerror(char const* s) {
+	fprintf(stderr, "%s\n", s);
 }
 
 %}
 
-%start start
+%define api.value.type union
+%token <double> NUM
+%token <symrec*> VAR FUN
+%nterm <double> exp
 
-%union {
-	char name[100];
-	struct cc {
-		int op; // +_*/\% ^ 
-		double right;
-	} info;
-	double num;
-	int func;
-}
+%precedence '='
+%left '-' '+'
+%left '*' '/'
+%precedence NEG
+%right '^'
 
-%type<num> exp term factor power call LITNUM
-%type<info> expp termp factorp
-%type<name> ID
-%type<func> func KWSIN KWCOS KWTAN KWSQRT KWLOG
+%verbose
 
-%token EXIT OPSUM OPREST OPPROD OPDIV OPDIVI OPMOD OPPOW
-%token ID
-%token OPASIGN
-%token KWSIN KWCOS KWTAN KWSQRT KWLOG
-%token LITNUM
-%token LPAR RPAR
-%token NL
+%define parse.trace
+
+%printer { fprintf(yyo, "%s", $$->name); } VAR;
+%printer { fprintf(yyo, "%s()", $$->name); } FUN;
+%printer { fprintf(yyo, "%g", $$); } <double>;
 
 %%
 
-start
-	: /* empty string */
-	| start line
+input
+	: %empty
+	| input line
 	;
 
 line
-	: NL
-	| assign NL
-	| exp NL                   { printf("= %f\n", $1); }
-	| ID NL
-	;
-
-assign
-	: ID OPASIGN exp
+	: '\n'
+	| exp '\n'                 { printf("= %f\n", $1); }
+	| error '\n'               { yyerrok; }
 	;
 
 exp
-	: term expp                { $$ = $2.op < 0? $1 : op($1, $2.right, $2.op); }
-	;
-
-expp
-	: OPSUM term expp          { $$.op=0;$$.right=($3.op<0?$2:op($2,$3.right,$3.op)); }
-	| OPREST term expp         { $$.op=1;$$.right=($3.op<0?$2:op($2,$3.right,$3.op)); }
-	| /* empty string */       { $$.op = -1; }
-	;
-
-term
-	: factor termp             { $$ = $2.op < 0? $1 : op($1, $2.right, $2.op); }
-	;
-
-termp
-	: OPPROD factor termp      { $$.op=2;$$.right=($3.op<0?$2:op($2,$3.right,$3.op)); }
-	| OPDIV factor termp       { $$.op=3;$$.right=($3.op<0?$2:op($2,$3.right,$3.op)); }
-	| OPDIVI factor termp      { $$.op=4;$$.right=($3.op<0?$2:op($2,$3.right,$3.op)); }
-	| OPMOD factor termp       { $$.op=5;$$.right=($3.op<0?$2:op($2,$3.right,$3.op)); }
-	| /* empty string */       { $$.op = -1; }
-	;
-
-factor
-	: power factorp            { $$ = $2.op < 0? $1 : op($1, $2.right, $2.op); }
-	;
-
-factorp
-	: OPPOW power factorp      { $$.op=6;$$.right=($3.op<0?$2:op($2,$3.right,$3.op)); }
-	| /* empty string */       { $$.op = -1; }
-	;
-
-power
-	: ID
-	| LITNUM
-	| OPREST LITNUM            { $$ = -$2; }
-	| call
-	| LPAR exp RPAR            { $$ = $2; }
-	;
-
-call
-	: func LPAR exp RPAR       { $$ = func[$1]($3); }
-	;
-
-func
-	: KWSIN                    { $$ = 0; }
-	| KWCOS                    { $$ = 1; }
-	| KWTAN                    { $$ = 2; }
-	| KWSQRT                   { $$ = 3; }
-	| KWLOG                    { $$ = 4; }
+	: NUM
+	| VAR                      { $$ = $1->value.var; }
+	| VAR '=' exp              { $$ = $3; $1->value.var = $3; }
+	| FUN '(' exp ')'          { $$ = $1->value.fun($3); }
+	| exp '+' exp              { $$ = $1 + $3; }
+	| exp '-' exp              { $$ = $1 - $3; }
+	| exp '*' exp              { $$ = $1 * $3; }
+	| exp '/' exp              { $$ = $1 / $3; }
+	| '-' exp %prec NEG        { $$ = -$2; }
+	| exp '^' exp              { $$ = pow($1, $3); }
+	| '(' exp ')'              { $$ = $2; }
 	;
 
 %%
 
-int main() {
-	yyparse();
-	return 0;
+struct init {
+	char const* name;
+	func_t* fun;
+};
+
+struct init const funs[] = {
+	{ "atan", atan },
+	{ "cos", cos },
+	{ "exp", exp },
+	{ "ln", log },
+	{ "sin", sin },
+	{ "sqrt", sqrt },
+	{ 0, 0 },
+};
+
+symrec* sym_table;
+
+static void init_table(void) {
+	for (int i = 0; funs[i].name; ++i) {
+		symrec* ptr = putsym(funs[i].name, FUN);
+		ptr->value.fun = funs[i].fun;
+	}
+}
+
+#include <assert.h>
+#include <stdlib.h>
+#include <string.h>
+
+symrec* putsym(char const* name, int sym_type) {
+	symrec* res = (symrec*) malloc(sizeof(symrec));
+	res->name = strdup(name);
+	res->type = sym_type;
+	res->value.var = 0;
+	res->next = sym_table;
+	sym_table = res;
+	return res;
+}
+
+symrec* getsym(char const* name) {
+	for (symrec* p = sym_table; p; p = p->next) {
+		if (strcmp(p->name, name) == 0) {
+			return p;
+		}
+	}
+	return NULL;
+}
+
+int main(int argc, char const* argv[]) {
+	if (argc == 2 && strcmp(argv[1], "-p") == 0) {
+		yydebug = 1;
+	}
+	init_table();
+	return yyparse();
 }

@@ -25,4 +25,4 @@ clean:
 	$(RM) calc.tab.c
 	$(RM) calc.tab.h
 	$(RM) lex.yy.c
-
+	$(RM) calc.output
