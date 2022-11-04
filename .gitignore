@@ -56,3 +56,6 @@ dkms.conf
 *.tab.c
 *.tab.h
 *.output
+
+# other stuff
+.ccls-cache/

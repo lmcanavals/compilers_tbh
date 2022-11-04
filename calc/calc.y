@@ -56,7 +56,7 @@ exp
 			$$ = $1->value.var;
 		else {
 			yyerror("undef var");
-			exit(1);
+			yyerrok;
 		}
 	}
 	| VAR '=' exp              { $$ = $3; $1->value.var = $3; $1->init = 1; }
