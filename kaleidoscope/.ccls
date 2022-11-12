@@ -1,0 +1,5 @@
+clang++
+-I/usr/lib/llvm-14/include -std=c++14   -fno-exceptions -D_GNU_SOURCE -D__STDC_CONSTAN
+T_MACROS -D__STDC_FORMAT_MACROS -D__STDC_LIMIT_MACROS
+-L/usr/lib/llvm-14/lib
+-lLLVM-14
